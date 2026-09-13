@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import * as grpc from "@grpc/grpc-js";
@@ -119,7 +120,7 @@ interface StreamServiceClient extends grpc.Client {
 type StreamServiceConstructor = new (
     address: string,
     credentials: grpc.ChannelCredentials,
-    options?: Partial<grpc.ChannelOptions>,
+    options?: Partial<grpc.ClientOptions>,
 ) => StreamServiceClient;
 
 let cachedConstructor: StreamServiceConstructor | undefined;
@@ -137,10 +138,31 @@ function loadStreamService(): StreamServiceConstructor {
     return cachedConstructor;
 }
 
+export interface TlsOptions {
+    /** PEM CA file to verify the server. Omit to verify against the system roots. */
+    caFile?: string;
+}
+
 export interface StratusClientOptions {
     address?: string;
+    /**
+     * Bearer token sent as `authorization: Bearer <token>` on every call. A
+     * server configured with `AUTH_TOKEN` rejects calls without it; one without
+     * `AUTH_TOKEN` accepts every call and ignores the header.
+     * Defaults to `STRATUS_AUTH_TOKEN`; an empty string sends no header.
+     */
+    token?: string;
+    /**
+     * Connect over TLS. `true` verifies against the system roots. Without it
+     * the channel is plaintext, including the token. The server may serve TLS
+     * on any host or on none, so this has to match its deployment. Mutually
+     * exclusive with `credentials`.
+     */
+    tls?: boolean | TlsOptions;
+    /** Custom channel credentials; overrides the plaintext default. */
     credentials?: grpc.ChannelCredentials;
-    channelOptions?: Partial<grpc.ChannelOptions>;
+    /** Passed through to the gRPC client; `interceptors` run before the bearer token one. */
+    channelOptions?: Partial<grpc.ClientOptions>;
 }
 
 export interface StratusClient {
@@ -188,14 +210,69 @@ function toCallOptions(options: CallOptions | undefined): grpc.CallOptions {
     return deadlineMs === undefined ? {} : { deadline: Date.now() + deadlineMs };
 }
 
+function resolveCredentials(options: StratusClientOptions): grpc.ChannelCredentials {
+    const { tls, credentials } = options;
+
+    if (tls !== undefined && tls !== false && credentials !== undefined) {
+        throw new Error("stratus: pass either tls or credentials, not both");
+    }
+
+    if (credentials !== undefined) {
+        return credentials;
+    }
+
+    if (tls === undefined || tls === false) {
+        return grpc.credentials.createInsecure();
+    }
+
+    const caFile = tls === true ? undefined : tls.caFile;
+
+    return grpc.credentials.createSsl(caFile === undefined ? null : readFileSync(caFile));
+}
+
+// gRPC metadata values must be printable ASCII; grpc-js otherwise rejects the
+// call with an error that quotes the whole value. Catch it here so a token with
+// a stray newline (a common secret-file artifact) never ends up in a log line.
+function resolveToken(options: StratusClientOptions): string {
+    const token = options.token ?? process.env.STRATUS_AUTH_TOKEN ?? "";
+
+    if (token !== "" && !/^[!-~]+$/.test(token)) {
+        throw new Error(
+            "stratus: token contains characters that are not allowed in a gRPC header (check for surrounding whitespace or newlines)",
+        );
+    }
+
+    return token;
+}
+
+// grpc-js only sends call credentials over a secure channel, so the token is
+// attached by an interceptor instead: it then works over TLS and over plaintext
+// on loopback or a private container network alike.
+function bearerTokenInterceptor(token: string): grpc.Interceptor {
+    return (callOptions, nextCall) =>
+        new grpc.InterceptingCall(nextCall(callOptions), {
+            start(metadata, listener, next) {
+                metadata.set("authorization", `Bearer ${token}`);
+                next(metadata, listener);
+            },
+        });
+}
+
 export function createStratusClient(
     options: StratusClientOptions = {},
 ): StratusClient {
     const StreamService = loadStreamService();
+    const token = resolveToken(options);
+    const userInterceptors = options.channelOptions?.interceptors ?? [];
     const client = new StreamService(
         options.address ?? DEFAULT_ADDRESS,
-        options.credentials ?? grpc.credentials.createInsecure(),
-        options.channelOptions,
+        resolveCredentials(options),
+        {
+            ...options.channelOptions,
+            ...(token === ""
+                ? {}
+                : { interceptors: [...userInterceptors, bearerTokenInterceptor(token)] }),
+        },
     );
 
     return {

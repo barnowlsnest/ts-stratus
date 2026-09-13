@@ -14,5 +14,6 @@ export type {
     StratusClient,
     StratusClientOptions,
     StreamInfo,
+    TlsOptions,
     Uint64,
 } from "./stratus/index.ts";

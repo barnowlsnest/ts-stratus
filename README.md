@@ -63,6 +63,38 @@ try {
 }
 ```
 
+### Authentication and TLS
+
+Auth and TLS are both opt-in on the stratus server, on any host. When it is
+configured with `AUTH_TOKEN` it rejects every call — streaming ones included —
+with `UNAUTHENTICATED` unless it carries `authorization: Bearer <token>`; with
+`AUTH_TOKEN` unset it accepts every call (and ignores a token if you send one).
+It serves TLS only when given `TLS_CERT_FILE` and `TLS_KEY_FILE`, and otherwise
+serves plaintext. It logs a warning for each one that is off. So `token` and
+`tls` have to match how that particular server is deployed. Pass the same value
+the server has in `AUTH_TOKEN`:
+
+```ts
+const client = createStratusClient({
+  address: "stratus.example:8000",
+  token: process.env.STRATUS_AUTH_TOKEN, // the default when `token` is omitted
+  tls: { caFile: "ca.pem" },             // or `tls: true` for the system roots
+});
+```
+
+| Option        | Default                  | Meaning                                                              |
+| ------------- | ------------------------ | -------------------------------------------------------------------- |
+| `token`       | `STRATUS_AUTH_TOKEN` env | bearer token; an empty string sends no header                        |
+| `tls`         | off                      | `true` or `{ caFile }`; without it the channel is plaintext          |
+| `credentials` | plaintext                | custom channel credentials; cannot be combined with `tls` (unless `false`) |
+
+Without `tls` the token travels in plaintext. That is fine against a server on
+loopback, on a private container network whose port is published on `127.0.0.1`
+only, or behind a gateway or mesh that already terminates TLS. Pass `tls` when
+the stratus server itself serves TLS. The upstream `compose.yaml` stack is for
+local/demo runs: it serves unauthenticated plaintext on `127.0.0.1:8000`, so the
+default `createStratusClient()` connects to it as-is.
+
 ### uint64 and bigint
 
 Every ID, dedup key and count in the schema is a proto `uint64`, which overflows
