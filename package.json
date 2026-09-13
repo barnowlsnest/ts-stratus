@@ -1,0 +1,42 @@
+{
+  "name": "ts-stratus",
+  "version": "1.0.0",
+  "description": "TypeScript client for barnowlsnest/stratus GRPC service",
+  "homepage": "https://github.com/barnowlsnest/ts-stratus#readme",
+  "bugs": {
+    "url": "https://github.com/barnowlsnest/ts-stratus/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/barnowlsnest/ts-stratus.git"
+  },
+  "private": true,
+  "license": "MIT",
+  "author": "barnowlsnest",
+  "type": "module",
+  "main": "./dist/index.js",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "proto:sync": "node scripts/sync-proto.mjs",
+    "test": "node --test \"src/**/*.test.ts\"",
+    "test:watch": "node --test --watch \"src/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.4",
+    "globals": "^16.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.4",
+    "@grpc/proto-loader": "^0.8.1"
+  }
+}

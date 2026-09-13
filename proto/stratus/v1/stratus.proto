@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+
+package stratus.v1;
+
+option go_package = "github.com/barnowlsnest/stratus/api/grpc/v1;stratusv1";
+
+service StreamService {
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc Add(AddRequest) returns (AddResponse);
+  rpc ReadRange(ReadRangeRequest) returns (ReadResponse);
+  rpc ReconcileCache(google.protobuf.Empty) returns (ReconcileCacheResponse);
+  rpc GetStreamInfo(google.protobuf.Empty) returns (GetStreamInfoResponse);
+  rpc ReadOffset(ReadOffsetRequest) returns (stream ReadResponse);
+}
+
+message GetStreamInfoResponse {
+  StreamInfo info = 1;
+}
+
+message StreamInfo {
+  Range range=1;
+  uint64 cached_records=2;
+  uint64 fs_records=3;
+}
+
+message ReconcileCacheResponse {
+  Range range=1;
+}
+
+message InputRecord {
+  uint64 dedup_key = 1;
+  reserved 2 to 15;
+  bytes raw_data = 16;
+}
+
+message Range {
+  uint64 start = 1;
+  uint64 end = 2;
+}
+
+message OutputRecord {
+  uint64 id = 1;
+  reserved 2 to 15;
+  bytes raw_data = 16;
+}
+
+message ReadOffsetRequest {
+  uint64 start_id = 1;
+  uint64 max_records = 2;
+  google.protobuf.Duration timeout = 3;
+}
+
+message ReadRangeRequest {
+  uint64 start_id = 1;
+  uint64 end_id = 2;
+  google.protobuf.Duration timeout = 3;
+}
+
+message AddRequest {
+  repeated InputRecord records = 1;
+}
+
+message AddResponse {
+  Range added_records= 1;
+  Range stream_records = 2;
+  uint64 duplicate_records = 3;
+}
+
+message ReadResponse {
+  repeated OutputRecord records = 1;
+}
+
+message DeleteRequest {
+  uint64 end_id = 1;
+}
+
+message DeleteResponse {
+    Range deleted_records = 1;
+    Range stream_records = 2;
+}

@@ -141,3 +141,11 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+dist/
+coverage/
+
+.DS_Store
+
+.idea/
+.vscode/
