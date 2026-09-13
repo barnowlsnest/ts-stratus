@@ -1,4 +1,4 @@
-# ts-sandbox
+# ts-stratus
 
 Node.js + TypeScript sandbox that runs `.ts` files directly with Node's built-in
 type stripping — no `ts-node`, no bundler, no loader flags.
