@@ -1,7 +1,6 @@
 # ts-stratus
 
-Node.js + TypeScript sandbox that runs `.ts` files directly with Node's built-in
-type stripping — no `ts-node`, no bundler, no loader flags.
+TypeScript client for [barnowlsnest/stratus](https://github.com/barnowlsnest/stratus)
 
 ## Requirements
 
