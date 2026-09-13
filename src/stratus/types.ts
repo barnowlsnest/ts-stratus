@@ -34,12 +34,11 @@ export interface CallOptions {
     deadlineMs?: number;
 }
 
-export interface ReadRangeOptions extends CallOptions {
+export interface ServerCallOptions extends CallOptions {
     serverTimeoutMs?: number;
 }
 
-export interface ReadOffsetOptions extends CallOptions {
-    serverTimeoutMs?: number;
-}
+export type ReadRangeOptions = ServerCallOptions;
+export type ReadOffsetOptions = ServerCallOptions;
 
 export type Uint64 = bigint | number;
