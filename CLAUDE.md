@@ -20,6 +20,7 @@ npm run build              # rm -rf dist && tsc -p tsconfig.build.json — emits
 npm run lint               # type-aware ESLint (eslint.config.mjs)
 npm run lint:fix
 
+npm run prepare            # same as build; npm runs it when installing from git
 npm run proto:sync         # re-downloads proto/stratus/v1/stratus.proto from GitHub (pinned SHA)
 ```
 
@@ -49,6 +50,14 @@ Every ID, dedup key, and count in the schema is a proto `uint64`, which overflow
 - Wire layer: strings (decimal).
 - Domain layer: `bigint`.
 - Public method inputs accept `Uint64` (`bigint | number`) and reject any `number` that isn't `Number.isSafeInteger`, rather than silently losing precision (see `encodeUint64`/`safeInteger` in `codec.ts`).
+
+### Packaging
+
+Consumers install from git (`github:barnowlsnest/ts-stratus#<commit>`); the package stays `private`. `prepare` builds `dist/` during that install, and `files` ships `dist` and `proto`, since `client.ts` reads the `.proto` from disk relative to `import.meta.dirname`.
+
+### Server behavior the client passes through
+
+`deleteUpTo(n)` keeps record `n`. `readOffset(start, max)` yields nothing for a `max` of 1 and `max - 1` records when it catches up with the tail. `add` rejects records of 4 MiB or more. See the README.
 
 ### Streaming
 
