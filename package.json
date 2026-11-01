@@ -15,6 +15,17 @@
   "author": "barnowlsnest",
   "type": "module",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "proto"
+  ],
   "engines": {
     "node": ">=22.18.0"
   },
@@ -25,7 +36,8 @@
     "lint:fix": "eslint . --fix",
     "proto:sync": "node scripts/sync-proto.mjs",
     "test": "node --test \"src/**/*.test.ts\"",
-    "test:watch": "node --test --watch \"src/**/*.test.ts\""
+    "test:watch": "node --test --watch \"src/**/*.test.ts\"",
+    "prepare": "npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
