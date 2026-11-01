@@ -77,8 +77,7 @@ try {
 
 The client passes these through from the server unchanged:
 
-- `deleteUpTo(n)` removes the records before `n`. Record `n` stays and becomes the first one, so it
-  cannot empty a stream.
+- `deleteUpTo(n)` removes the records up to and including `n`. Record `n` is deleted, so the resulting stream starts after it and the operation can empty a stream.
 - `readOffset(start, max)` yields nothing for a `max` of `1`, and yields `max - 1` records when it
   catches up with the tail. To get exactly `n` while tailing, ask for `n + 1` and `break` after `n`.
 - `add` rejects a record of 4 MiB or more, from gRPC's default receive limit on the server.
