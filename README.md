@@ -11,6 +11,17 @@ nvm use
 npm install
 ```
 
+To use it from another project, install it from git. `prepare` builds `dist/` during the install,
+and the package ships `dist/` and the `.proto` the client reads at runtime. Pin a commit so the
+client cannot change underneath you:
+
+```bash
+npm install github:barnowlsnest/ts-stratus#<commit>
+```
+
+The package is `private`, so it is not published to npm. When a bundler is involved, leave it
+external so the `.proto` path resolves (`serverExternalPackages` in Next.js).
+
 ## Scripts
 
 | Script  | What it does  |
@@ -61,6 +72,15 @@ try {
   client.close();
 }
 ```
+
+### Server behavior to expect
+
+The client passes these through from the server unchanged:
+
+- `deleteUpTo(n)` removes the records up to and including `n`. Record `n` is deleted, so the resulting stream starts after it and the operation can empty a stream.
+- `readOffset(start, max)` yields nothing for a `max` of `1`, and yields `max - 1` records when it
+  catches up with the tail. To get exactly `n` while tailing, ask for `n + 1` and `break` after `n`.
+- `add` rejects a record of 4 MiB or more, from gRPC's default receive limit on the server.
 
 ### Authentication and TLS
 
