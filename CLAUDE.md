@@ -57,7 +57,7 @@ Consumers install from git (`github:barnowlsnest/ts-stratus#<commit>`); the pack
 
 ### Server behavior the client passes through
 
-`deleteUpTo(n)` keeps record `n`. `readOffset(start, max)` yields nothing for a `max` of 1 and `max - 1` records when it catches up with the tail. `add` rejects records of 4 MiB or more. See the README.
+`deleteUpTo(n)` removes records up to and including `n`; record `n` is deleted, so the operation can empty the stream. `readOffset(start, max)` yields nothing for a `max` of 1 and `max - 1` records when it catches up with the tail. `add` rejects records of 4 MiB or more. See the README.
 
 ### Streaming
 
